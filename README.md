@@ -16,4 +16,6 @@ Yes! Indeed all this code is completely safe unless its a fork, in which that ca
 For the most part only C++ is support as that is the language SFML was wrote for, but with bindings like CSFML you should be able to write pure C code for your SFML application.
 
 ### How do I get started?
-Its easy to get started o
+Its easy to get started to get started, all you need is to download the template or git clone it to your desired project directory either via the command line or GUI application. For compiling your code you're going to need Python which should be already installed if you're on a Unix-based operating system like macOS/Mac OSX and Linux.  
+(**Please keep in mind that the pre-install version of Python might be the old deprecated Python 2 versions and you might need to update.**)  
+For Windows developers it should be easy to download the latest version of Python or at least Python 3 without need admin permissions.
