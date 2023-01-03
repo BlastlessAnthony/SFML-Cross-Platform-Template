@@ -92,7 +92,7 @@ if platform.system() == "Windows":
 
     if BuildArchitechure.upper() == "32BIT":
 
-        Compiler = f"g++.exe"
+        Compiler = f'{WORKING_DIRECTORY}{PATH_SEPARATOR}Dependencies{PATH_SEPARATOR}Compilers{PATH_SEPARATOR}MinGW{PATH_SEPARATOR}bin{PATH_SEPARATOR}g++'
         Includes += []
         LinkerLibrariesDirectories += [f"{WORKING_DIRECTORY}{PATH_SEPARATOR}Dependencies{PATH_SEPARATOR}SFML{PATH_SEPARATOR}Windows{PATH_SEPARATOR}x86{PATH_SEPARATOR}External"]
         LinkerLibraries += ["flac", "freetype", "ogg", "openal32", "vorbis", "vorbisenc", "vorbisfile"]
@@ -136,4 +136,9 @@ for libdir in LinkerLibrariesDirectories:
 for lib in LinkerLibraries:
     args += f'  -l"{lib}"'
 
-os.system(f"g++ {args}")
+command: str = "" 
+command += f'"{Compiler}"'
+command += f'{args}'
+
+print(command)
+os.system(command)
