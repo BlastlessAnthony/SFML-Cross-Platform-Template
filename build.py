@@ -92,7 +92,7 @@ if platform.system() == "Windows":
 
     if BuildArchitechure.upper() == "32BIT":
 
-        Compiler = f'{WORKING_DIRECTORY}{PATH_SEPARATOR}Dependencies{PATH_SEPARATOR}Compilers{PATH_SEPARATOR}MinGW{PATH_SEPARATOR}bin{PATH_SEPARATOR}g++'
+        Compiler = f'{WORKING_DIRECTORY}{PATH_SEPARATOR}Dependencies{PATH_SEPARATOR}Compilers{PATH_SEPARATOR}MinGW{PATH_SEPARATOR}bin{PATH_SEPARATOR}g++.exe'
         Includes += []
         LinkerLibrariesDirectories += [f"{WORKING_DIRECTORY}{PATH_SEPARATOR}Dependencies{PATH_SEPARATOR}SFML{PATH_SEPARATOR}Windows{PATH_SEPARATOR}x86{PATH_SEPARATOR}External"]
         LinkerLibraries += ["flac", "freetype", "ogg", "openal32", "vorbis", "vorbisenc", "vorbisfile"]
@@ -141,4 +141,4 @@ command += f'"{Compiler}"'
 command += f'{args}'
 
 print(command)
-os.system(command)
+os.system(f'start {Compiler}')
