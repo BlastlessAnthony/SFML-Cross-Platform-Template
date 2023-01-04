@@ -77,11 +77,14 @@ Includes: list[str] = [
     f"{IncludeDirectory}",
     f"{WORKING_DIRECTORY}{PATH_SEPARATOR}Dependencies{PATH_SEPARATOR}SFML{PATH_SEPARATOR}include"
 ]
-LinkerLibraries: list[str] = []
+
 
 CPreprocessorFlags: list[str] = ["-std=c++11", "-Wall", "-Wpedantic", "-Wextra"]
 CFlags: list[str] = []
-LinkerLibrariesDirectories: list[str] = []
+LibraryDirectories: list[str] = []
+Libraries: list[str] = []
+FrameworkDirectories: list[str] = []
+Frameworks: list[str] = []
 LinkerFlags: list[str] = []
 ################################################################################
 #### Build Configuration
@@ -94,17 +97,17 @@ if platform.system() == "Windows":
 
         Compiler = f'{WORKING_DIRECTORY}{PATH_SEPARATOR}Dependencies{PATH_SEPARATOR}Compilers{PATH_SEPARATOR}MinGW{PATH_SEPARATOR}bin{PATH_SEPARATOR}g++.exe'
         Includes += []
-        LinkerLibrariesDirectories += [f"{WORKING_DIRECTORY}{PATH_SEPARATOR}Dependencies{PATH_SEPARATOR}SFML{PATH_SEPARATOR}Windows{PATH_SEPARATOR}x86{PATH_SEPARATOR}External"]
-        LinkerLibraries += ["flac", "freetype", "ogg", "openal32", "vorbis", "vorbisenc", "vorbisfile"]
+        LibraryDirectories += [f"{WORKING_DIRECTORY}{PATH_SEPARATOR}Dependencies{PATH_SEPARATOR}SFML{PATH_SEPARATOR}Windows{PATH_SEPARATOR}x86{PATH_SEPARATOR}External"]
+        Libraries += ["flac", "freetype", "ogg", "openal32", "vorbis", "vorbisenc", "vorbisfile"]
         CFlags += []
 
         if BuildType.upper() == "RELEASE":
 
-            LinkerLibrariesDirectories += [
+            LibraryDirectories += [
                 f"{WORKING_DIRECTORY}{PATH_SEPARATOR}Dependencies{PATH_SEPARATOR}SFML{PATH_SEPARATOR}Windows{PATH_SEPARATOR}x86{PATH_SEPARATOR}Release"
             ]
 
-            LinkerLibraries += [
+            Libraries += [
                 "sfml-graphics", "sfml-window", 
                 "sfml_system", "sfml-audio", 
                 "sfml-network"
@@ -112,28 +115,85 @@ if platform.system() == "Windows":
 
         elif BuildType.upper() == "DEBUG":
 
-            LinkerLibrariesDirectories += [
+            LibraryDirectories += [
                 f"{WORKING_DIRECTORY}{PATH_SEPARATOR}Dependencies{PATH_SEPARATOR}SFML{PATH_SEPARATOR}Windows{PATH_SEPARATOR}x86{PATH_SEPARATOR}Debug"
             ]
 
-            LinkerLibraries += [
+            Libraries += [
+                "sfml-graphics-d", "sfml-window-d", 
+                "sfml_system-d", "sfml-audio-d", 
+                "sfml-network-d"
+            ]
+        else:
+            print(f"A fatal error has occured, BuildType was set to {BuildType} and not RELEASE or DEBUG (non-case sensitive) which is not valid.")
+
+    elif BuildArchitechure.upper() == "64BIT":
+        Compiler = f'{WORKING_DIRECTORY}{PATH_SEPARATOR}Dependencies{PATH_SEPARATOR}Compilers{PATH_SEPARATOR}MinGW64{PATH_SEPARATOR}bin{PATH_SEPARATOR}g++.exe'
+        Includes += []
+        LibraryDirectories += [f"{WORKING_DIRECTORY}{PATH_SEPARATOR}Dependencies{PATH_SEPARATOR}SFML{PATH_SEPARATOR}Windows{PATH_SEPARATOR}x86_64{PATH_SEPARATOR}External"]
+        Libraries += ["flac", "freetype", "ogg", "openal32", "vorbis", "vorbisenc", "vorbisfile"]
+        CFlags += []
+
+        if BuildType.upper() == "RELEASE":
+
+            LibraryDirectories += [
+                f"{WORKING_DIRECTORY}{PATH_SEPARATOR}Dependencies{PATH_SEPARATOR}SFML{PATH_SEPARATOR}Windows{PATH_SEPARATOR}x86_64{PATH_SEPARATOR}Release"
+            ]
+
+            Libraries += [
+                "sfml-graphics", "sfml-window", 
+                "sfml_system", "sfml-audio", 
+                "sfml-network"
+            ]
+
+        elif BuildType.upper() == "DEBUG":
+
+            LibraryDirectories += [
+                f"{WORKING_DIRECTORY}{PATH_SEPARATOR}Dependencies{PATH_SEPARATOR}SFML{PATH_SEPARATOR}Windows{PATH_SEPARATOR}x86_64{PATH_SEPARATOR}Debug"
+            ]
+
+            Libraries += [
                 "sfml-graphics-d", "sfml-window-d", 
                 "sfml_system-d", "sfml-audio-d", 
                 "sfml-network-d"
             ]
 
         else:
-            print(f"A fatal error had occured, BuildType was set to {BuildType} and not RELEASE or DEBUG (non-case sensitive) which is not valid.")
+            print(f"A fatal error has occured, BuildType was set to {BuildType} and not RELEASE or DEBUG (non-case sensitive) which is not valid.")
+            exit(1)
+    else:
+        print(f"A fatal error has")
+
+elif platform.system == "Darwin":
+    if BuildArchitechure.upper() == "64BIT":
+        Compiler = f''
+        Includes += []
+        LibraryDirectories += []
+        Libraries += []
+        CFlags += []
+
+        if BuildType.upper() == "RELEASE":
+
+            LibraryDirectories += []
+            Libraries += []
+
+        elif BuildType.upper() == "DEBUG":
+
+            LibraryDirectories += []
+            Libraries += []
+
+        else:
+            print(f"A fatal error has occured, BuildType was set to {BuildType} and not RELEASE or DEBUG (non-case sensitive) which is not valid.")
             exit(1)
 else:
-    print("")
+    print("Your operating system is not supported. Please add support for other operating systems if needed.")
     exit(1)
 
 args: str = ""
-for libdir in LinkerLibrariesDirectories:
+for libdir in LibraryDirectories:
     args += f' -L"{libdir}"'
 
-for lib in LinkerLibraries:
+for lib in Libraries:
     args += f'  -l"{lib}"'
 
 command: str = "" 
