@@ -1,4 +1,4 @@
-import os, sys, fnmatch, platform
+import os, sys, fnmatch, platform, subprocess, time
 
 if len(sys.argv) <= 1:
     s = """
@@ -97,14 +97,14 @@ if platform.system() == "Windows":
 
         Compiler = f'{WORKING_DIRECTORY}{PATH_SEPARATOR}Dependencies{PATH_SEPARATOR}Compilers{PATH_SEPARATOR}MinGW{PATH_SEPARATOR}bin{PATH_SEPARATOR}g++.exe'
         Includes += []
-        LibraryDirectories += [f"{WORKING_DIRECTORY}{PATH_SEPARATOR}Dependencies{PATH_SEPARATOR}SFML{PATH_SEPARATOR}Windows{PATH_SEPARATOR}x86{PATH_SEPARATOR}External"]
+        LibraryDirectories += [f'{WORKING_DIRECTORY}{PATH_SEPARATOR}Dependencies{PATH_SEPARATOR}SFML{PATH_SEPARATOR}Windows{PATH_SEPARATOR}x86{PATH_SEPARATOR}External']
         Libraries += ["flac", "freetype", "ogg", "openal32", "vorbis", "vorbisenc", "vorbisfile"]
         CFlags += []
 
         if BuildType.upper() == "RELEASE":
 
             LibraryDirectories += [
-                f"{WORKING_DIRECTORY}{PATH_SEPARATOR}Dependencies{PATH_SEPARATOR}SFML{PATH_SEPARATOR}Windows{PATH_SEPARATOR}x86{PATH_SEPARATOR}Release"
+                f'{WORKING_DIRECTORY}{PATH_SEPARATOR}Dependencies{PATH_SEPARATOR}SFML{PATH_SEPARATOR}Windows{PATH_SEPARATOR}x86{PATH_SEPARATOR}Release'
             ]
 
             Libraries += [
@@ -116,7 +116,7 @@ if platform.system() == "Windows":
         elif BuildType.upper() == "DEBUG":
 
             LibraryDirectories += [
-                f"{WORKING_DIRECTORY}{PATH_SEPARATOR}Dependencies{PATH_SEPARATOR}SFML{PATH_SEPARATOR}Windows{PATH_SEPARATOR}x86{PATH_SEPARATOR}Debug"
+                f'{WORKING_DIRECTORY}{PATH_SEPARATOR}Dependencies{PATH_SEPARATOR}SFML{PATH_SEPARATOR}Windows{PATH_SEPARATOR}x86{PATH_SEPARATOR}Debug'
             ]
 
             Libraries += [
@@ -130,14 +130,14 @@ if platform.system() == "Windows":
     elif BuildArchitechure.upper() == "64BIT":
         Compiler = f'{WORKING_DIRECTORY}{PATH_SEPARATOR}Dependencies{PATH_SEPARATOR}Compilers{PATH_SEPARATOR}MinGW64{PATH_SEPARATOR}bin{PATH_SEPARATOR}g++.exe'
         Includes += []
-        LibraryDirectories += [f"{WORKING_DIRECTORY}{PATH_SEPARATOR}Dependencies{PATH_SEPARATOR}SFML{PATH_SEPARATOR}Windows{PATH_SEPARATOR}x86_64{PATH_SEPARATOR}External"]
+        LibraryDirectories += [f'{WORKING_DIRECTORY}{PATH_SEPARATOR}Dependencies{PATH_SEPARATOR}SFML{PATH_SEPARATOR}Windows{PATH_SEPARATOR}x86_64{PATH_SEPARATOR}External']
         Libraries += ["flac", "freetype", "ogg", "openal32", "vorbis", "vorbisenc", "vorbisfile"]
         CFlags += []
 
         if BuildType.upper() == "RELEASE":
 
             LibraryDirectories += [
-                f"{WORKING_DIRECTORY}{PATH_SEPARATOR}Dependencies{PATH_SEPARATOR}SFML{PATH_SEPARATOR}Windows{PATH_SEPARATOR}x86_64{PATH_SEPARATOR}Release"
+                f'{WORKING_DIRECTORY}{PATH_SEPARATOR}Dependencies{PATH_SEPARATOR}SFML{PATH_SEPARATOR}Windows{PATH_SEPARATOR}x86_64{PATH_SEPARATOR}Release'
             ]
 
             Libraries += [
@@ -165,40 +165,107 @@ if platform.system() == "Windows":
         print(f"A fatal error has")
 
 elif platform.system == "Darwin":
-    if BuildArchitechure.upper() == "64BIT":
-        Compiler = f''
-        Includes += []
+    Compiler = f'clang++'
+    Includes += []
+    LibraryDirectories += []
+    Libraries += []
+    CFlags += []
+
+    if BuildType.upper() == "RELEASE":
+
         LibraryDirectories += []
         Libraries += []
-        CFlags += []
 
-        if BuildType.upper() == "RELEASE":
+    elif BuildType.upper() == "DEBUG":
 
-            LibraryDirectories += []
-            Libraries += []
+        LibraryDirectories += []
+        Libraries += []
 
-        elif BuildType.upper() == "DEBUG":
-
-            LibraryDirectories += []
-            Libraries += []
-
-        else:
-            print(f"A fatal error has occured, BuildType was set to {BuildType} and not RELEASE or DEBUG (non-case sensitive) which is not valid.")
-            exit(1)
+    else:
+        print(f"A fatal error has occured, BuildType was set to {BuildType} and not RELEASE or DEBUG (non-case sensitive) which is not valid.")
+        exit(1)
 else:
     print("Your operating system is not supported. Please add support for other operating systems if needed.")
     exit(1)
 
-args: str = ""
+################################################################################
+#### Final Setup
+################################################################################
+BuildDirectory = f'{BuildRootDirectory}{PATH_SEPARATOR}'
+BinaryDirectory = f"{BinaryRootDirectory}{PATH_SEPARATOR}"
+
+if platform.system == "Windows":
+    ExecutableName = f'{ProjectName}.exe'
+
+if platform.system != "Darwin":
+    if BuildArchitechure.upper() == "32BIT":
+        CFlags += ['-m32']
+    elif BuildArchitechure.upper() == "64BIT":
+        CFlags += ['-m64']
+    else:
+        print("")
+        exit(1)
+
+    if BuildArchitechure.upper() == '32BIT':
+        BuildDirectory = f'{BuildDirectory}x86{PATH_SEPARATOR}'
+        BinaryDirectory = f'{BinaryDirectory}x86{PATH_SEPARATOR}'
+    elif BuildArchitechure.upper() == '64BIT':
+        BuildDirectory = f'{BuildDirectory}x86_64{PATH_SEPARATOR}'
+        BinaryDirectory = f'{BinaryDirectory}x86_64{PATH_SEPARATOR}'
+    
+if BuildType.upper() == 'RELEASE':
+    BuildDirectory = f'{BuildDirectory}Release'
+    BinaryDirectory = f'{BinaryDirectory}Release'
+    CFlags += ['-O3']
+    CPreprocessorFlags += ['-DNDEBUG']
+elif BuildType.upper() == 'DEBUG':
+    BuildDirectory = f'{BuildDirectory}Debug'
+    BinaryDirectory = f'{BuildDirectory}Debug'
+    CFlags += ['-O0']
+else:
+    print("")
+    exit(1)
+
+linkerArguments: str = ""
 for libdir in LibraryDirectories:
-    args += f' -L"{libdir}"'
+    linkerArguments += f' -L"{libdir}"'
 
 for lib in Libraries:
-    args += f'  -l"{lib}"'
+    linkerArguments += f' -l"{lib}"'
 
-command: str = "" 
-command += f'"{Compiler}"'
-command += f'{args}'
+compilerArguments: str = ''
+for flag in CFlags:
+    compilerArguments += f' {flag}'
 
-print(command)
-os.system(f'start {Compiler}')
+for ppflag in CPreprocessorFlags:
+    compilerArguments += f' {ppflag}'
+
+Objects: list[str] = []
+
+for source in Sources:
+    s = source.replace(f'{SourceDirectory}', f'{BuildDirectory}')
+    Objects.append(s.replace(".cpp", ".o"))
+
+#print(Objects)
+
+def mkdir(path: str) -> bool:
+    import os
+    path = path.strip()
+    path = path.rstrip("\\")
+    if not os.path.exists(path):
+        os.makedirs(path)
+        del os
+        return True
+    else:
+        del os
+        return False
+
+if not os.path.isdir(f'{BuildDirectory}'):
+    mkdir(f'{BuildDirectory}')
+
+
+
+for _i in range(len(Sources)):
+    print(f'"{Compiler}" -c "{Sources[_i]}" {compilerArguments} -o "{Objects[_i]}"')
+    subprocess.run(f'"{Compiler}" -c "{Sources[_i]}" {compilerArguments} -o "{Objects[_i]}"')
+    time.sleep(4)
